@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="65dp"
+    android:id="@+id/pop_upRl"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!--Profile image for the chat head.-->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/pop_upIV"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/baseline_circle_24"
+        />
+
+    <!--Close button-->
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/close_btn"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="40dp"
+        android:background="@null"
+        android:src="@drawable/ic_cancel"
+        />
+</RelativeLayout>

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+    <string name="storage_permission_title">Storage Permission</string>
+    <string name="storage_permission_detail">Please allow storage permission. If you deny this permission, features of application may no longer functional.</string>
+</resources>
