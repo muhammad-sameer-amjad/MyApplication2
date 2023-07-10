@@ -12,13 +12,18 @@ import android.os.IBinder
 import android.provider.MediaStore
 import android.util.Log
 import android.view.*
+import android.view.View.GONE
 import android.view.View.OnTouchListener
-import androidx.appcompat.widget.AppCompatImageButton
-import androidx.appcompat.widget.AppCompatImageView
+import android.view.View.VISIBLE
+import android.widget.ImageButton
+import android.widget.ImageView
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.downloader.R
 import com.downloader.activity.MainActivity
+import com.downloader.adapter.FileAdapter
 import java.io.File
 
 
@@ -26,15 +31,16 @@ class DownloadService : Service() {
     private lateinit var mWindowManager: WindowManager
     private lateinit var popupView: View
     private val TAG = "DOWNLOAD_SERVICE_TAG"
-    private lateinit var closeImageBtn:AppCompatImageButton
-    private lateinit var pop_upIV:AppCompatImageView
+    private lateinit var closeImageBtn:ImageButton
+    private lateinit var pop_upIV:ImageView
+    private lateinit var recyclerView:RecyclerView
 
     private val mFiles = mutableListOf<File>()
 
     override fun onCreate() {
         super.onCreate()
         init()
-        mFiles.addAll(getDownloadedFiles())
+
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -42,15 +48,38 @@ class DownloadService : Service() {
         popupView = LayoutInflater.from(this).inflate(R.layout.layou_pop_up_head, null);
         closeImageBtn = popupView.findViewById(R.id.close_btn)
         pop_upIV = popupView.findViewById(R.id.pop_upIV)
+        recyclerView = popupView.findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
+        mFiles.addAll(getDownloadedFiles())
+        Log.d(TAG,"Files list: "+mFiles.toString())
+        val adapter = FileAdapter(mFiles)
+        recyclerView.adapter = adapter
 
-        val params = WindowManager.LayoutParams(
+        /*var params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
-        )
+        )*/
+        var params = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            )
+        } else {
+            WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            )
+        }
 
         params.gravity = Gravity.TOP or Gravity.LEFT
         params.x = 0
@@ -60,9 +89,11 @@ class DownloadService : Service() {
         mWindowManager = getSystemService(WINDOW_SERVICE) as WindowManager;
         mWindowManager.addView(popupView, params);
 
-        closeImageBtn.setOnClickListener(){
+        /*closeImageBtn.setOnClickListener(){
 
-        }
+        }*/
+
+
 
         pop_upIV.setOnTouchListener(object : OnTouchListener {
             private var lastAction = 0
@@ -71,8 +102,14 @@ class DownloadService : Service() {
             private var initialTouchX = 0f
             private var initialTouchY = 0f
             override fun onTouch(v: View?, event: MotionEvent): Boolean {
+
                 when (event.getAction()) {
                     MotionEvent.ACTION_DOWN -> {
+                        if(recyclerView.visibility == VISIBLE){
+                            recyclerView.visibility = GONE
+                        }else{
+                            recyclerView.visibility = VISIBLE
+                        }
 
                         //remember the initial position.
                         initialX = params.x
@@ -102,14 +139,15 @@ class DownloadService : Service() {
                     }
                     MotionEvent.ACTION_MOVE -> {
                         //Calculate the X and Y coordinates of the view.
-                        params.x = initialX + (event.getRawX() - initialTouchX) as Int
-                        params.y = initialY + (event.getRawY() - initialTouchY) as Int
+                        params.x = (initialX + (event.getRawX() - initialTouchX)).toInt()
+                        params.y = (initialY + (event.getRawY() - initialTouchY)).toInt()
 
                         //Update the layout with new X & Y coordinate
                         mWindowManager.updateViewLayout(popupView, params)
                         lastAction = event.getAction()
                         return true
                     }
+
                 }
                 return false
             }
@@ -146,7 +184,7 @@ class DownloadService : Service() {
     }
 
     private fun getDownloadedFiles(): List<File> {
-        val mediaStoreUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        /*val mediaStoreUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Downloads.EXTERNAL_CONTENT_URI
         } else {
             TODO("VERSION.SDK_INT < Q")
@@ -166,7 +204,10 @@ class DownloadService : Service() {
             }
             cursor.close()
         }
-        return files
+        return files*/
+        val downloadFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val files = downloadFolder.listFiles()
+        return files.toList()
     }
 
     override fun onDestroy() {
