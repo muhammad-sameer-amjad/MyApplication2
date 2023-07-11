@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
     private lateinit var dialog: DialogUtil
     private var isNotificationAllowed: Boolean = true
     private val CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084
-    private val TAG="MAIN_TAG"
+    private val TAG = "MAIN_TAG"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
         dialog.init()
         if (!PermissionUtil.haveStoragePermission(ctx)) {
             dialog.showDialog()
-        }else{
+        } else {
             checkNotificationPermissionForTiramisu()
         }
 
@@ -68,41 +68,32 @@ class MainActivity : AppCompatActivity(), DialogInterface {
                     // You can use the API that requires the permission.
                     Log.d(TAG, "Notification PERMISSION GRANTED")
                     isNotificationAllowed = true
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(
-                            this
-                        )
-                    ) {
 
-                        //If the draw over permission is not available open the settings screen
-                        //to grant the permission.
-                        val intent = Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
-                        )
-                        startActivityForResult(intent, CODE_DRAW_OVER_OTHER_APP_PERMISSION)
-                    } else {
-                        startForeground()
-                    }
+
+
+                    openSettingForOverlayPermission()
 
 
                 }
+
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
 
-                        Snackbar.make(
-                            findViewById(android.R.id.content),
-                            "Notification blocked",
-                            Snackbar.LENGTH_LONG
-                        ).setAction("Settings") {
-                            // Responds to click on the action
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            val uri: Uri =
-                                Uri.fromParts("package", packageName, null)
-                            intent.data = uri
-                            startActivity(intent)
-                        }.show()
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Notification blocked",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Settings") {
+                        // Responds to click on the action
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val uri: Uri =
+                            Uri.fromParts("package", packageName, null)
+                        intent.data = uri
+                        startActivity(intent)
+                    }.show()
 
                 }
+
                 else -> {
                     // The registered ActivityResultCallback gets the result of this request
                     requestPermissionLauncher.launch(
@@ -111,6 +102,23 @@ class MainActivity : AppCompatActivity(), DialogInterface {
                 }
             }
 
+        }
+    }
+
+    fun openSettingForOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(
+                this
+            )
+        ) {
+            //If the draw over permission is not available open the settings screen
+            //to grant the permission.
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivityForResult(intent, CODE_DRAW_OVER_OTHER_APP_PERMISSION)
+        }else{
+            startForeground()
         }
     }
 
@@ -172,6 +180,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
                     // If request is cancelled, the result arrays are empty.
                     if (grantResults.isNotEmpty() && grantResults[0] == PermissionChecker.PERMISSION_GRANTED) {
                         //permission granted
+                        openSettingForOverlayPermission()
 
                     } else {
                         // If we weren't granted the permission, check to see if we should show
@@ -193,6 +202,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
                          */
                         if (showRationale) {
                             //permission not granted
+                            requestPermission()
                         } else {
                             goToSettings()
                         }
@@ -210,7 +220,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
         if (isGranted) {
 
             isNotificationAllowed = true
-            startForeground()
+            openSettingForOverlayPermission()
 
         } else {
 
@@ -230,7 +240,7 @@ class MainActivity : AppCompatActivity(), DialogInterface {
         }
     }
 
-    fun startForeground(){
+    fun startForeground() {
         val intent = Intent(this, DownloadService::class.java)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -247,9 +257,11 @@ class MainActivity : AppCompatActivity(), DialogInterface {
             if (resultCode == RESULT_OK) {
                 startForeground()
             } else { //Permission is not available
-                Toast.makeText(this,
+                Toast.makeText(
+                    this,
                     "Draw over other app permission not available. Closing the application",
-                    Toast.LENGTH_SHORT).show();
+                    Toast.LENGTH_SHORT
+                ).show();
 
                 finish();
             }
@@ -257,4 +269,5 @@ class MainActivity : AppCompatActivity(), DialogInterface {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
+
 }
